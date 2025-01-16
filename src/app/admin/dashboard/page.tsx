@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { supabase } from "@/lib/supabase";
+import { supabase } from "@/lib/supabase/supabase";
 import { Order, ContactMessage } from "@/lib/types";
 import { useRouter } from "next/navigation";
 

@@ -7,7 +7,6 @@ export interface Product {
   image: string;
   description: string;
 }
-
 export interface CheckoutFormData {
   // Product details
   productId: string;
@@ -25,16 +24,17 @@ export interface CheckoutFormData {
   deliveryType: "home" | "office";
   additionalNotes?: string;
 }
-export interface Order {
-  id: string;
-  created_at: string;
+
+export interface OrderRecord {
+  id?: string;
+  created_at?: string;
   product_id: string;
   product_name: string;
   customer_name: string;
   customer_email: string;
   customer_phone: string;
   delivery_address: string;
-  status: "pending" | "accepted" | "rejected";
+  status?: "pending" | "accepted" | "rejected";
   admin_response?: string;
 }
 
