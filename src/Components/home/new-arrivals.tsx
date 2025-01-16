@@ -3,7 +3,6 @@ import Link from "next/link";
 import Image from "next/image";
 import products from "@/lib/data/products";
 
-// This would typically come from your API or database
 const newArrivals: Product[] = products;
 
 export default function NewArrivals() {

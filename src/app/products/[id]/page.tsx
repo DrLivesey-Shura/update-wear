@@ -1,6 +1,11 @@
+// app/products/[id]/page.tsx
+"use client";
+
 import { products } from "@/lib/data/products";
 import Image from "next/image";
 import Link from "next/link";
+import { useState } from "react";
+import { useRouter } from "next/navigation";
 
 interface ProductPageProps {
   params: {
@@ -9,11 +14,31 @@ interface ProductPageProps {
 }
 
 export default function ProductPage({ params }: ProductPageProps) {
+  const router = useRouter();
+  const [selectedSize, setSelectedSize] = useState<string>("");
   const product = products.find((p) => p.id === params.id);
 
   if (!product) {
     return <div>Product not found</div>;
   }
+
+  const handleBuyNow = () => {
+    if (!selectedSize) {
+      alert("Please select a size");
+      return;
+    }
+
+    // Create URL with product details
+    const queryParams = new URLSearchParams({
+      productId: product.id,
+      productName: product.name,
+      price: product.price.toString(),
+      color: product.color,
+      size: selectedSize,
+    }).toString();
+
+    router.push(`/checkout?${queryParams}`);
+  };
 
   return (
     <div className="min-h-screen py-8">
@@ -56,15 +81,27 @@ export default function ProductPage({ params }: ProductPageProps) {
                 {product.sizes.map((size) => (
                   <button
                     key={size}
-                    className="px-4 py-2 border rounded-md hover:bg-gray-50"
+                    className={`px-4 py-2 border rounded-md transition ${
+                      selectedSize === size
+                        ? "bg-black text-white"
+                        : "hover:bg-gray-50"
+                    }`}
+                    onClick={() => setSelectedSize(size)}
                   >
                     {size}
                   </button>
                 ))}
               </div>
+              {/* Size guide or error message */}
+              <p className="text-sm text-red-500 mt-2 h-5">
+                {selectedSize === "" ? "Please select a size" : ""}
+              </p>
             </div>
 
-            <button className="w-full bg-black text-white py-3 rounded-md hover:bg-gray-800 transition">
+            <button
+              onClick={handleBuyNow}
+              className="w-full bg-black text-white py-3 rounded-md hover:bg-gray-800 transition disabled:bg-gray-400"
+            >
               Buy Now
             </button>
           </div>

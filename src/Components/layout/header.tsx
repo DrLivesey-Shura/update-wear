@@ -29,7 +29,16 @@ const Header = () => {
                 <li>
                   <a
                     className="text-gray-500 transition hover:text-gray-500/75"
-                    href="#"
+                    href="/"
+                  >
+                    {" "}
+                    Home{" "}
+                  </a>
+                </li>
+                <li>
+                  <a
+                    className="text-gray-500 transition hover:text-gray-500/75"
+                    href="/about"
                   >
                     {" "}
                     About{" "}
@@ -39,7 +48,7 @@ const Header = () => {
                 <li>
                   <a
                     className="text-gray-500 transition hover:text-gray-500/75"
-                    href="#"
+                    href="/products"
                   >
                     {" "}
                     Products{" "}
@@ -49,7 +58,7 @@ const Header = () => {
                 <li>
                   <a
                     className="text-gray-500 transition hover:text-gray-500/75"
-                    href="#"
+                    href="/services"
                   >
                     {" "}
                     Services{" "}
@@ -59,7 +68,7 @@ const Header = () => {
                 <li>
                   <a
                     className="text-gray-500 transition hover:text-gray-500/75"
-                    href="#"
+                    href="/contact-us"
                   >
                     {" "}
                     Contact Us{" "}
