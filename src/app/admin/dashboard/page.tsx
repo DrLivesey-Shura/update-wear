@@ -10,6 +10,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/Components/ui/tabs";
 import { Button } from "@/Components/ui/button";
 import { Textarea } from "@/Components/ui/textarea";
 import { sendOrderStatusEmail } from "@/utils/email";
+import { Mail, Phone } from "lucide-react";
 // import { generateOrderStatusEmail, sendEmail } from "@/utils/email";
 
 type TabType = "orders" | "messages";
@@ -125,25 +126,23 @@ export default function AdminDashboard() {
     }
   };
 
-  const handleMessageResponse = async (messageId: string) => {
+  const handleMessageStatus = async (
+    messageId: string,
+    status: "read" | "unread"
+  ) => {
     try {
-      const response = responses[messageId] || "";
+      // Update message status in Supabase
       const { error } = await supabase
         .from("contact_messages")
-        .update({ status: "read", admin_response: response })
+        .update({ status })
         .eq("id", messageId);
 
       if (error) throw error;
 
-      setResponses((prev) => {
-        const newResponses = { ...prev };
-        delete newResponses[messageId];
-        return newResponses;
-      });
-
+      // Refresh messages list to show updated status
       await fetchMessages();
     } catch (err) {
-      setError(`Failed to update message: ${err}`);
+      setError(`Failed to update message status: ${err}`);
       console.error(err);
     }
   };
@@ -281,27 +280,64 @@ export default function AdminDashboard() {
               {messages.map((message) => (
                 <Card key={message.id}>
                   <CardContent className="p-6">
-                    <div>
-                      <h3 className="text-lg font-medium">{message.name}</h3>
-                      <p className="text-sm text-gray-500">{message.email}</p>
-                      <p className="mt-2">{message.message}</p>
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <h3 className="text-lg font-medium">{message.name}</h3>
+                        <div className="mt-1 space-y-1">
+                          <p className="text-sm text-gray-500">
+                            <Mail className="w-4 h-4 inline mr-1" />
+                            {message.email}
+                          </p>
+                          <p className="text-sm text-gray-500">
+                            <Phone className="w-4 h-4 inline mr-1" />
+                            {message.phone}
+                          </p>
+                        </div>
+                        <p className="mt-4">{message.message}</p>
+                        <p className="text-sm text-gray-500 mt-2">
+                          Received:{" "}
+                          {new Date(message.created_at).toLocaleString()}
+                        </p>
+                      </div>
+                      <span
+                        className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
+                ${
+                  message.status === "unread"
+                    ? "bg-blue-100 text-blue-800"
+                    : "bg-gray-100 text-gray-800"
+                }`}
+                      >
+                        {message.status}
+                      </span>
                     </div>
 
                     {message.status === "unread" && (
-                      <div className="mt-4 space-y-2">
-                        <Textarea
-                          value={responses[message.id] || ""}
-                          onChange={(e) =>
-                            handleResponseChange(message.id, e.target.value)
-                          }
-                          placeholder="Write a response..."
-                          rows={2}
-                        />
+                      <div className="mt-4 flex space-x-2">
                         <Button
-                          onClick={() => handleMessageResponse(message.id)}
+                          onClick={() =>
+                            (window.location.href = `mailto:${message.email}`)
+                          }
+                          variant="outline"
+                        >
+                          <Mail className="w-4 h-4 mr-2" />
+                          Reply by Email
+                        </Button>
+                        <Button
+                          onClick={() =>
+                            (window.location.href = `tel:${message.phone}`)
+                          }
+                          variant="outline"
+                        >
+                          <Phone className="w-4 h-4 mr-2" />
+                          Call
+                        </Button>
+                        <Button
+                          onClick={() =>
+                            handleMessageStatus(message.id, "read")
+                          }
                           variant="default"
                         >
-                          Send Response
+                          Mark as Read
                         </Button>
                       </div>
                     )}

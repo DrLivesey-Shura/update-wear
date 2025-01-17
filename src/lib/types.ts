@@ -45,10 +45,10 @@ export interface Order {
 
 export interface ContactMessage {
   id: string;
-  created_at: string;
   name: string;
   email: string;
+  phone: string;
   message: string;
+  created_at: string;
   status: "unread" | "read";
-  admin_response?: string;
 }
