@@ -25,16 +25,21 @@ export interface CheckoutFormData {
   additionalNotes?: string;
 }
 
-export interface OrderRecord {
-  id?: string;
-  created_at?: string;
+export interface Order {
+  id: string;
+  created_at: string;
   product_id: string;
   product_name: string;
+  product_color: string;
+  product_size: string;
+  price: number;
   customer_name: string;
   customer_email: string;
   customer_phone: string;
   delivery_address: string;
-  status?: "pending" | "accepted" | "rejected";
+  delivery_type: "home" | "office";
+  city: string;
+  status: "pending" | "accepted" | "rejected";
   admin_response?: string;
 }
 
