@@ -4,6 +4,7 @@ import "./globals.css";
 import Header from "@/Components/layout/header";
 import Footer from "@/Components/layout/footer";
 import { ProductsProvider } from "@/contexts/ProductsContext";
+import Script from "next/script";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -27,6 +28,12 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
+      <head>
+        <Script
+          src="https://widget.cloudinary.com/v2.0/global/all.js"
+          strategy="beforeInteractive"
+        />
+      </head>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >

@@ -22,6 +22,7 @@
     "date-fns": "^4.1.0",
     "lucide-react": "^0.471.1",
     "next": "15.1.4",
+    "next-cloudinary": "^6.16.0",
     "nodemailer": "^6.9.16",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",

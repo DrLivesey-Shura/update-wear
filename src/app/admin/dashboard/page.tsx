@@ -1,5 +1,6 @@
 "use client";
 
+import { CldUploadWidget } from "next-cloudinary";
 import React, { useEffect, useState } from "react";
 import { Order, ContactMessage, Product } from "@/lib/types";
 import { useRouter } from "next/navigation";
@@ -10,7 +11,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/Components/ui/tabs";
 import { Button } from "@/Components/ui/button";
 import { Textarea } from "@/Components/ui/textarea";
 import { sendOrderStatusEmail } from "@/utils/email";
-import { Mail, Pencil, Phone, Plus, Trash } from "lucide-react";
+import { Mail, Pencil, Phone, Plus, Trash, Upload } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -19,7 +20,7 @@ import {
 } from "@/Components/ui/dialog";
 import { Input } from "@/Components/ui/input";
 import { Label } from "@/Components/ui/label";
-// import { generateOrderStatusEmail, sendEmail } from "@/utils/email";
+import Image from "next/image";
 
 type TabType = "orders" | "messages";
 type OrderStatus = "pending" | "accepted" | "rejected";
@@ -43,6 +44,7 @@ export default function AdminDashboard() {
     image: "",
     description: "",
   });
+  const [uploadedImageUrl, setUploadedImageUrl] = useState<string>("");
 
   useEffect(() => {
     const initialize = async () => {
@@ -58,6 +60,13 @@ export default function AdminDashboard() {
     };
 
     initialize();
+  }, []);
+
+  useEffect(() => {
+    // Ensure Cloudinary is properly initialized
+    if (typeof window !== "undefined" && (window as any).cloudinary) {
+      (window as any).cloudinary.applyUploadWidget;
+    }
   }, []);
 
   const checkAuth = async () => {
@@ -191,6 +200,11 @@ export default function AdminDashboard() {
   const handleProductSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
+      if (!uploadedImageUrl) {
+        setError("Please upload an image first");
+        return;
+      }
+
       if (editingProduct) {
         const { error } = await supabase
           .from("products")
@@ -199,25 +213,23 @@ export default function AdminDashboard() {
             price: productForm.price,
             color: productForm.color,
             sizes: productForm.sizes,
-            image: productForm.image,
+            image: uploadedImageUrl,
             description: productForm.description,
           })
           .eq("id", editingProduct.id);
 
         if (error) throw error;
       } else {
-        // Remove any undefined values and let Supabase handle the ID
         const productData = {
           name: productForm.name,
           price: productForm.price,
           color: productForm.color,
-          sizes: productForm.sizes || [], // Ensure sizes is never undefined
-          image: productForm.image,
+          sizes: productForm.sizes || [],
+          image: uploadedImageUrl,
           description: productForm.description,
         };
 
         const { error } = await supabase.from("products").insert([productData]);
-
         if (error) throw error;
       }
 
@@ -254,10 +266,11 @@ export default function AdminDashboard() {
       name: "",
       price: 0,
       color: "",
-      sizes: [], // Initialize as empty array
+      sizes: [],
       image: "",
       description: "",
     });
+    setUploadedImageUrl("");
     setEditingProduct(null);
   };
 
@@ -271,6 +284,7 @@ export default function AdminDashboard() {
       image: product.image,
       description: product.description,
     });
+    setUploadedImageUrl(product.image);
     setIsProductDialogOpen(true);
   };
 
@@ -534,6 +548,56 @@ export default function AdminDashboard() {
                   </DialogTitle>
                 </DialogHeader>
                 <form onSubmit={handleProductSubmit} className="space-y-4">
+                  <div className="space-y-2">
+                    <Label>Product Image</Label>
+                    <div className="flex flex-col items-center gap-4">
+                      {uploadedImageUrl && (
+                        <div className="relative w-40 h-40">
+                          <Image
+                            src={uploadedImageUrl}
+                            alt="Product preview"
+                            fill
+                            className="object-cover rounded-md"
+                          />
+                        </div>
+                      )}
+                      <CldUploadWidget
+                        uploadPreset="update-wear"
+                        onSuccess={(result: any) => {
+                          if (result.info && result.info.secure_url) {
+                            setUploadedImageUrl(result.info.secure_url);
+                            setTimeout(() => {
+                              setIsProductDialogOpen(true);
+                            }, 1000);
+                          }
+                        }}
+                      >
+                        {({ open }) => {
+                          const handleImageUpload = () => {
+                            setIsProductDialogOpen(false);
+                            // Add a slightly longer delay before opening the widget
+                            setTimeout(() => {
+                              if (open) {
+                                open();
+                              }
+                            }, 300);
+                          };
+
+                          return (
+                            <Button
+                              type="button"
+                              variant="outline"
+                              className="w-full"
+                              onClick={handleImageUpload}
+                            >
+                              <Upload className="w-4 h-4 mr-2" />
+                              Upload Image
+                            </Button>
+                          );
+                        }}
+                      </CldUploadWidget>
+                    </div>
+                  </div>
                   <div>
                     <Label htmlFor="name">Name</Label>
                     <Input
@@ -592,20 +656,7 @@ export default function AdminDashboard() {
                       required
                     />
                   </div>
-                  <div>
-                    <Label htmlFor="image">Image URL</Label>
-                    <Input
-                      id="image"
-                      value={productForm.image}
-                      onChange={(e) =>
-                        setProductForm((prev) => ({
-                          ...prev,
-                          image: e.target.value,
-                        }))
-                      }
-                      required
-                    />
-                  </div>
+
                   <div>
                     <Label htmlFor="description">Description</Label>
                     <Textarea
