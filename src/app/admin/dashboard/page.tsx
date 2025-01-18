@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { Order, ContactMessage } from "@/lib/types";
+import { Order, ContactMessage, Product } from "@/lib/types";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase/client";
 import { Alert, AlertDescription } from "@/Components/ui/alert";
@@ -10,7 +10,15 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/Components/ui/tabs";
 import { Button } from "@/Components/ui/button";
 import { Textarea } from "@/Components/ui/textarea";
 import { sendOrderStatusEmail } from "@/utils/email";
-import { Mail, Phone } from "lucide-react";
+import { Mail, Pencil, Phone, Plus, Trash } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/Components/ui/dialog";
+import { Input } from "@/Components/ui/input";
+import { Label } from "@/Components/ui/label";
 // import { generateOrderStatusEmail, sendEmail } from "@/utils/email";
 
 type TabType = "orders" | "messages";
@@ -24,12 +32,23 @@ export default function AdminDashboard() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [responses, setResponses] = useState<Record<string, string>>({});
+  const [products, setProducts] = useState<Product[]>([]);
+  const [isProductDialogOpen, setIsProductDialogOpen] = useState(false);
+  const [editingProduct, setEditingProduct] = useState<Product | null>(null);
+  const [productForm, setProductForm] = useState<Partial<Product>>({
+    name: "",
+    price: 0,
+    color: "",
+    sizes: [],
+    image: "",
+    description: "",
+  });
 
   useEffect(() => {
     const initialize = async () => {
       try {
         await checkAuth();
-        await Promise.all([fetchOrders(), fetchMessages()]);
+        await Promise.all([fetchOrders(), fetchMessages(), fetchProducts()]);
       } catch (err) {
         setError("Failed to initialize dashboard");
         console.error(err);
@@ -154,6 +173,107 @@ export default function AdminDashboard() {
     }));
   };
 
+  const fetchProducts = async () => {
+    try {
+      const { data, error } = await supabase
+        .from("products")
+        .select("*")
+        .order("name");
+
+      if (error) throw error;
+      setProducts(data || []);
+    } catch (err) {
+      setError("Failed to fetch products");
+      console.error(err);
+    }
+  };
+
+  const handleProductSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      if (editingProduct) {
+        const { error } = await supabase
+          .from("products")
+          .update({
+            name: productForm.name,
+            price: productForm.price,
+            color: productForm.color,
+            sizes: productForm.sizes,
+            image: productForm.image,
+            description: productForm.description,
+          })
+          .eq("id", editingProduct.id);
+
+        if (error) throw error;
+      } else {
+        // Remove any undefined values and let Supabase handle the ID
+        const productData = {
+          name: productForm.name,
+          price: productForm.price,
+          color: productForm.color,
+          sizes: productForm.sizes || [], // Ensure sizes is never undefined
+          image: productForm.image,
+          description: productForm.description,
+        };
+
+        const { error } = await supabase.from("products").insert([productData]);
+
+        if (error) throw error;
+      }
+
+      await fetchProducts();
+      setIsProductDialogOpen(false);
+      resetProductForm();
+    } catch (err) {
+      setError(
+        `Failed to ${editingProduct ? "update" : "create"} product: ${err}`
+      );
+      console.error(err);
+    }
+  };
+
+  const handleDeleteProduct = async (productId: string) => {
+    if (window.confirm("Are you sure you want to delete this product?")) {
+      try {
+        const { error } = await supabase
+          .from("products")
+          .delete()
+          .eq("id", productId);
+
+        if (error) throw error;
+        await fetchProducts();
+      } catch (err) {
+        setError("Failed to delete product");
+        console.error(err);
+      }
+    }
+  };
+
+  const resetProductForm = () => {
+    setProductForm({
+      name: "",
+      price: 0,
+      color: "",
+      sizes: [], // Initialize as empty array
+      image: "",
+      description: "",
+    });
+    setEditingProduct(null);
+  };
+
+  const openEditDialog = (product: Product) => {
+    setEditingProduct(product);
+    setProductForm({
+      name: product.name,
+      price: product.price,
+      color: product.color,
+      sizes: product.sizes,
+      image: product.image,
+      description: product.description,
+    });
+    setIsProductDialogOpen(true);
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -196,6 +316,9 @@ export default function AdminDashboard() {
             <TabsTrigger value="orders">Orders ({orders.length})</TabsTrigger>
             <TabsTrigger value="messages">
               Messages ({messages.length})
+            </TabsTrigger>
+            <TabsTrigger value="products">
+              Products ({products.length})
             </TabsTrigger>
           </TabsList>
 
@@ -345,6 +468,176 @@ export default function AdminDashboard() {
                 </Card>
               ))}
             </div>
+          </TabsContent>
+
+          <TabsContent value="products">
+            <div className="mb-6">
+              <Button
+                onClick={() => {
+                  resetProductForm();
+                  setIsProductDialogOpen(true);
+                }}
+              >
+                <Plus className="w-4 h-4 mr-2" />
+                Add New Product
+              </Button>
+            </div>
+
+            <div className="space-y-6">
+              {products.map((product) => (
+                <Card key={product.id}>
+                  <CardContent className="p-6">
+                    <div className="flex justify-between">
+                      <div>
+                        <h3 className="text-lg font-medium">{product.name}</h3>
+                        <p className="text-sm text-gray-500">
+                          Color: {product.color}
+                        </p>
+                        <p className="text-sm text-gray-500">
+                          Sizes: {product.sizes.join(", ")}
+                        </p>
+                        <p className="text-sm text-gray-500">
+                          Price: ${product.price}
+                        </p>
+                        <p className="mt-2">{product.description}</p>
+                      </div>
+                      <div className="flex space-x-2">
+                        <Button
+                          variant="outline"
+                          onClick={() => openEditDialog(product)}
+                        >
+                          <Pencil className="w-4 h-4 mr-2" />
+                          Edit
+                        </Button>
+                        <Button
+                          variant="destructive"
+                          onClick={() => handleDeleteProduct(product.id)}
+                        >
+                          <Trash className="w-4 h-4 mr-2" />
+                          Delete
+                        </Button>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+
+            <Dialog
+              open={isProductDialogOpen}
+              onOpenChange={setIsProductDialogOpen}
+            >
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>
+                    {editingProduct ? "Edit Product" : "Add New Product"}
+                  </DialogTitle>
+                </DialogHeader>
+                <form onSubmit={handleProductSubmit} className="space-y-4">
+                  <div>
+                    <Label htmlFor="name">Name</Label>
+                    <Input
+                      id="name"
+                      value={productForm.name}
+                      onChange={(e) =>
+                        setProductForm((prev) => ({
+                          ...prev,
+                          name: e.target.value,
+                        }))
+                      }
+                      required
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="price">Price</Label>
+                    <Input
+                      id="price"
+                      type="number"
+                      step="0.01"
+                      value={productForm.price}
+                      onChange={(e) =>
+                        setProductForm((prev) => ({
+                          ...prev,
+                          price: parseFloat(e.target.value),
+                        }))
+                      }
+                      required
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="color">Color</Label>
+                    <Input
+                      id="color"
+                      value={productForm.color}
+                      onChange={(e) =>
+                        setProductForm((prev) => ({
+                          ...prev,
+                          color: e.target.value,
+                        }))
+                      }
+                      required
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="sizes">Sizes (comma-separated)</Label>
+                    <Input
+                      id="sizes"
+                      value={productForm.sizes?.join(", ")}
+                      onChange={(e) =>
+                        setProductForm((prev) => ({
+                          ...prev,
+                          sizes: e.target.value.split(",").map((s) => s.trim()),
+                        }))
+                      }
+                      required
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="image">Image URL</Label>
+                    <Input
+                      id="image"
+                      value={productForm.image}
+                      onChange={(e) =>
+                        setProductForm((prev) => ({
+                          ...prev,
+                          image: e.target.value,
+                        }))
+                      }
+                      required
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="description">Description</Label>
+                    <Textarea
+                      id="description"
+                      value={productForm.description}
+                      onChange={(e) =>
+                        setProductForm((prev) => ({
+                          ...prev,
+                          description: e.target.value,
+                        }))
+                      }
+                      required
+                    />
+                  </div>
+                  <div className="flex justify-end space-x-2">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => {
+                        setIsProductDialogOpen(false);
+                        resetProductForm();
+                      }}
+                    >
+                      Cancel
+                    </Button>
+                    <Button type="submit">
+                      {editingProduct ? "Update" : "Create"} Product
+                    </Button>
+                  </div>
+                </form>
+              </DialogContent>
+            </Dialog>
           </TabsContent>
         </Tabs>
       </div>

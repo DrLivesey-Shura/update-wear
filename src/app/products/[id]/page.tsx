@@ -3,22 +3,79 @@
 import { products } from "@/lib/data/products";
 import Image from "next/image";
 import Link from "next/link";
-import { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Product } from "@/lib/types";
 import { Alert, AlertDescription } from "@/Components/ui/alert";
+import { supabase } from "@/lib/supabase/client";
 
 interface ProductPageProps {
-  params: {
+  params: Promise<{
     id: string;
-  };
+  }>;
 }
 
 export default function ProductPage({ params }: ProductPageProps) {
   const router = useRouter();
+  const resolvedParams = React.use(params);
   const [selectedSize, setSelectedSize] = useState<string>("");
   const [error, setError] = useState<string>("");
-  const product = products.find((p) => p.id === params.id);
+  const [product, setProduct] = useState<Product | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetchProduct();
+  }, [resolvedParams.id]);
+
+  const fetchProduct = async () => {
+    try {
+      const { data, error } = await supabase
+        .from("products")
+        .select("*")
+        .eq("id", resolvedParams.id)
+        .single();
+
+      if (error) throw error;
+      setProduct(data);
+    } catch (err) {
+      console.error("Error fetching product:", err);
+      setError("Failed to load product");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSizeSelect = (size: string) => {
+    setSelectedSize(size);
+    setError("");
+  };
+
+  const handleBuyNow = () => {
+    if (!selectedSize) {
+      setError("Please select a size before proceeding");
+      return;
+    }
+
+    if (!product) return;
+
+    const queryParams = new URLSearchParams({
+      productId: product.id,
+      productName: product.name,
+      price: product.price.toString(),
+      color: product.color,
+      size: selectedSize,
+    }).toString();
+
+    router.push(`/checkout?${queryParams}`);
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900" />
+      </div>
+    );
+  }
 
   if (!product) {
     return (
@@ -35,28 +92,6 @@ export default function ProductPage({ params }: ProductPageProps) {
       </div>
     );
   }
-
-  const handleSizeSelect = (size: string) => {
-    setSelectedSize(size);
-    setError("");
-  };
-
-  const handleBuyNow = () => {
-    if (!selectedSize) {
-      setError("Please select a size before proceeding");
-      return;
-    }
-
-    const queryParams = new URLSearchParams({
-      productId: product.id,
-      productName: product.name,
-      price: product.price.toString(),
-      color: product.color,
-      size: selectedSize,
-    }).toString();
-
-    router.push(`/checkout?${queryParams}`);
-  };
 
   return (
     <div className="min-h-screen py-8 bg-gray-50">
