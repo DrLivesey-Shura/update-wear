@@ -39,13 +39,13 @@ The project follows a modular file structure:
 1. Clone the repository:
 
    ```bash
-   git clone https://github.com/your-username/my-nextjs-app.git
+   git clone https://github.com/DrLivesey-Shura/update-wear.git
    ```
 
 2. Navigate to the project directory:
 
    ```bash
-   cd my-nextjs-app
+   cd update-wear
    ```
 
 3. Install dependencies:
