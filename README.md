@@ -112,6 +112,3 @@ Deploy the app to a platform like Vercel:
 2. Connect the repository to Vercel.
 3. Configure environment variables in Vercel.
 
-## License
-
-This project is licensed under the MIT License.
