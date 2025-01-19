@@ -94,7 +94,7 @@ export default function ContactUs() {
                     <Phone className="w-6 h-6 text-blue-600 mt-1" />
                     <div className="ml-4">
                       <h3 className="text-lg font-medium">Phone</h3>
-                      <p className="text-gray-600">+1 (555) 123-4567</p>
+                      <p className="text-gray-600">+213 774856079</p>
                     </div>
                   </div>
 
@@ -102,7 +102,7 @@ export default function ContactUs() {
                     <Mail className="w-6 h-6 text-blue-600 mt-1" />
                     <div className="ml-4">
                       <h3 className="text-lg font-medium">Email</h3>
-                      <p className="text-gray-600">support@yourstore.com</p>
+                      <p className="text-gray-600">update-wear@gmail.com</p>
                     </div>
                   </div>
 
@@ -111,7 +111,7 @@ export default function ContactUs() {
                     <div className="ml-4">
                       <h3 className="text-lg font-medium">Address</h3>
                       <p className="text-gray-600">
-                        123 Store Street, City, Country
+                        123 Store Street, Chlef, Algeria
                       </p>
                     </div>
                   </div>

@@ -66,6 +66,7 @@ yarn dev
 ```
 
 Open [http://localhost:3000](http://localhost:3000) in your browser to view the app.
+Open [http://localhost:3000/admin/dashboard](http://localhost:3000/admin/dashboard) in your browser to view the admin side.
 
 ### Building for Production
 
@@ -90,9 +91,17 @@ yarn start
 To enable email verification, create a `.env.local` file in the root directory and add the following:
 
 ```env
-EMAIL_SERVICE_API_KEY=your-email-service-api-key
-EMAIL_FROM=your-email@example.com
-EMAIL_TO=recipient@example.com
+NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
+SUPABASE_SERVICE_ROLE_KEY=your_supabase_service_role_key
+
+EMAIL_USER=your_email
+EMAIL_APP_PASSWORD=your_email_app_password
+
+NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME=your_cloudinary_cloud_name
+CLOUDINARY_API_KEY=your_cloudinary_api_key
+CLOUDINARY_API_SECRET=your_cloudinary_api_secret
+NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET=your_cloudinary_upload_preset
 ```
 
 ### Deployment
